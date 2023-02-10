@@ -1,7 +1,8 @@
 import express, { response } from "express"
 import Cors from "cors"
-import Twitter from "twitter-lite";
-import dotenv from "dotenv/config"
+import Twitter from "twitter-lite-v2";
+import Twit from "twit"
+import dotenv from "dotenv/config";
 
 
 
@@ -14,11 +15,14 @@ const app=express();
 app.use(express.json())
 app.use(Cors())
 
+var access_tokens=null
+
 const client=new Twitter({
     subdomain:"api",
-    version:"2.0",
+    version:"2",
     consumer_key:"M4njLraZHMJncrLHN52bdOmO4",
     consumer_secret:"t5E9e07o21EQ6oDdfce61mK8yemRjFqvIp57K2CArwGVgz0YTm",
+   
 })
 
 
@@ -36,9 +40,38 @@ app.get('/login', (req, res) => {
 });
 
 app.post("/accessToken",(req,res)=>{
-    console.log(req.body.oauth_token,"token")
-    console.log(req.body.oauth_verifier,"verifier")
+    client.getAccessToken({
+        oauth_token:req?.body.oauth_token,
+        oauth_verifier:req?.body.oauth_verifier
+    }).then((res)=>{
+        access_tokens=res
+        console.log(access_tokens)
+        const twitter=new Twit({
+            consumer_key:"M4njLraZHMJncrLHN52bdOmO4",
+            consumer_secret:"t5E9e07o21EQ6oDdfce61mK8yemRjFqvIp57K2CArwGVgz0YTm",
+            access_token_secret:access_tokens?(access_tokens?.oauth_token_secret):("hello"),
+            access_token:access_tokens?(access_tokens?.oauth_token):("hello")
+            
+        })
+
+        twitter.get("users/me",{id:access_tokens.user_id,screen_name:access_tokens.screen_name},(err,data,response)=>{
+            console.log(data)
+        })
+        
+       
+        
+        // app.get("/getUser",async(req,res)=>{
+        //     await twitter.get("users/me").then((user)=>{
+        //          console.log(user)
+        //          res.json(user)
+        //      }).catch(console.error)
+        //  })
+    }).catch(console.error)
+    
 })
+
+
+
 
 
 
